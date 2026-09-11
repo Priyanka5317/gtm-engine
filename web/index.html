@@ -10,7 +10,7 @@
      value is from the validated reference palette - the funnel ramp passed
      the ordinal gate in both modes (one hue, monotone lightness, light end
      clears 2:1 on its surface). */
-  .viz-root {
+  :root {
     color-scheme: light;
     --surface-1:      #fcfcfb;
     --page:           #f9f9f7;
@@ -33,7 +33,7 @@
     --critical: #d03b3b;
   }
   @media (prefers-color-scheme: dark) {
-    :root:where(:not([data-theme="light"])) .viz-root {
+    :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
       --surface-1:      #1a1a19;
       --page:           #0d0d0d;
@@ -51,7 +51,7 @@
       --nodata:  #383835;
     }
   }
-  :root[data-theme="dark"] .viz-root {
+  :root[data-theme="dark"] {
     color-scheme: dark;
     --surface-1:      #1a1a19;
     --page:           #0d0d0d;
@@ -76,12 +76,12 @@
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
   }
-  .viz-root { background: var(--page); min-height: 100vh; padding: 32px 24px 64px; }
+  .viz-root { background: var(--page); color: var(--text-primary); min-height: 100vh; padding: 32px 24px 64px; }
   .wrap { max-width: 1080px; margin: 0 auto; }
 
   header.masthead { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
-  h1 { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 6px; }
-  .sub { color: var(--text-secondary); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 68ch; }
+  h1 { color: var(--text-primary); font-size: 28px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .sub { color: var(--text-secondary); font-size: 15.5px; line-height: 1.6; margin: 0; max-width: 68ch; }
   .masthead-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
   button.ghost {
@@ -96,15 +96,15 @@
     background: var(--surface-1); border: 1px solid var(--border);
     border-radius: 12px; padding: 22px 24px; margin-top: 20px;
   }
-  h2 { font-size: 16.5px; font-weight: 640; margin: 0 0 4px; letter-spacing: -0.005em; }
-  .note { color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin: 0 0 18px; max-width: 76ch; }
+  h2 { color: var(--text-primary); font-size: 17.5px; font-weight: 640; margin: 0 0 4px; letter-spacing: -0.005em; }
+  .note { color: var(--text-secondary); font-size: 14.5px; line-height: 1.65; margin: 0 0 18px; max-width: 76ch; }
   .note.tight { margin-bottom: 0; }
 
   /* ---- stat tiles: a headline number is not a chart */
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; margin-top: 20px; }
   .tile { background: var(--surface-1); padding: 15px 17px; }
-  .tile .v { font-size: 27px; font-weight: 640; line-height: 1.1; }
-  .tile .k { font-size: 12px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.01em; }
+  .tile .v { color: var(--text-primary); font-size: 28px; font-weight: 640; line-height: 1.1; }
+  .tile .k { font-size: 12.5px; color: var(--text-secondary); margin-top: 5px; letter-spacing: 0.01em; }
 
   /* ---- gate */
   .gate-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
@@ -125,28 +125,42 @@
   .toggles { display: flex; gap: 16px; margin-top: 11px; font-size: 13px; color: var(--text-secondary); flex-wrap: wrap; }
   .toggles label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
 
+  /* ---- inputs: this is a tool, so the fields lead and the examples follow */
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 13px; }
+  @media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
+  .fld { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+  .fld input {
+    font: inherit; font-size: 14px; color: var(--text-primary); background: var(--page);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px;
+  }
+  .fld input:focus { outline: 2px solid var(--stage-2); outline-offset: 1px; }
+  .fldlab { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; }
+  .chips-lab { font-size: 12px; color: var(--text-secondary); margin: 14px 0 7px; }
+  .summary { font-size: 14px; color: var(--text-primary); font-weight: 620; margin: 0 0 9px; line-height: 1.45; }
+  .empty { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
   .verdict-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   /* The swatch carries identity; the words carry meaning. A status colour
      never communicates alone - two of the four are sub-3:1 by design. */
   .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; box-shadow: 0 0 0 2px var(--surface-1); }
-  .verdict-word { font-size: 21px; font-weight: 660; letter-spacing: -0.01em; }
+  .verdict-word { color: var(--text-primary); font-size: 22px; font-weight: 660; letter-spacing: -0.01em; }
   .tier { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
   .finding { border-top: 1px solid var(--gridline); padding: 13px 0 0; margin-top: 13px; }
   .finding:first-of-type { border-top: 0; }
-  .frule { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .frule { color: var(--text-primary); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
   .fverdict { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
   blockquote {
-    margin: 9px 0 0; padding: 9px 12px; border-left: 2px solid var(--baseline);
+    margin: 9px 0 0; padding: 11px 13px; font-weight: 500; border-left: 2px solid var(--baseline);
     background: var(--page); border-radius: 0 6px 6px 0;
     font-size: 13.5px; line-height: 1.55; color: var(--text-primary);
   }
-  .why { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin: 8px 0 0; }
+  .why { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin: 8px 0 0; }
   .notes { margin: 14px 0 0; padding: 0 0 0 18px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
 
   /* ---- funnel bars: horizontal, 4px rounded data-end, 2px surface gap */
   .bars { margin-top: 4px; }
   .row { display: grid; grid-template-columns: 168px minmax(0, 1fr) 96px; align-items: center; gap: 12px; padding: 2px 0; }
-  .row .lab { font-size: 13px; color: var(--text-secondary); text-align: right; }
+  .row .lab { font-size: 13.5px; color: var(--text-secondary); text-align: right; }
   .track { position: relative; height: 26px; }
   .track::before {
     content: ""; position: absolute; inset: 0 0 0 0; border-left: 1px solid var(--baseline);
@@ -161,7 +175,7 @@
 
   table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
   th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gridline); }
-  th { color: var(--text-muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; }
   td.n { text-align: right; font-variant-numeric: tabular-nums; }
   [hidden] { display: none !important; }
 
@@ -217,9 +231,16 @@
 
     <div class="gate-grid">
       <div>
+        <div class="fields">
+          <label class="fld"><span>Role you are screening</span>
+            <input id="role" type="text" autocomplete="off" placeholder="Data Analyst, GTM Sales Insights"></label>
+          <label class="fld"><span>Company</span>
+            <input id="co" type="text" autocomplete="off" placeholder="Lyft"></label>
+        </div>
+        <label for="jd" class="fldlab">Paste the posting text</label>
+        <textarea id="jd" spellcheck="false" placeholder="Paste the whole job description, or just the sponsorship paragraph. Nothing leaves your browser."></textarea>
+        <div class="chips-lab">Or try a worked example</div>
         <div class="chips" id="chips"></div>
-        <label for="jd" style="position:absolute;left:-9999px">Job description text</label>
-        <textarea id="jd" spellcheck="false" placeholder="Paste job description text, or pick an example above."></textarea>
         <div class="toggles">
           <label><input type="checkbox" id="ev"> E-Verify confirmed</label>
           <label><input type="checkbox" id="evno"> E-Verify checked, not enrolled</label>
@@ -278,6 +299,8 @@ const out = document.getElementById('out');
 const ev = document.getElementById('ev');
 const evno = document.getElementById('evno');
 const lca = document.getElementById('lca');
+const roleEl = document.getElementById('role');
+const coEl = document.getElementById('co');
 
 const STATUS = {
   [Verdict.BLOCK]:     { color: 'var(--critical)', word: 'BLOCK',     gloss: 'stated, contractual - no application can succeed' },
@@ -298,13 +321,20 @@ function everifyState() {
 function render() {
   const text = jd.value;
   if (!text.trim()) {
-    out.innerHTML = '<p class="note tight" style="color:var(--text-muted)">Pick an example or paste text to see a verdict.</p>';
+    out.innerHTML = '<p class="empty">Paste a posting on the left, or try a worked example. '
+      + 'The verdict, the sentence that caused it, and the reasoning all appear here.</p>';
     return;
   }
   const r = evaluate(text, { everifyConfirmed: everifyState(), lcaCount: lca.checked ? 137 : null });
   const s = STATUS[r.verdict];
 
-  let html = `<div class="verdict-head">
+  // Label the verdict with what the user is actually screening, so the panel
+  // reads as a decision about a specific req rather than a demo output.
+  const role = roleEl.value.trim();
+  const co = coEl.value.trim();
+  const subject = role && co ? `${role} at ${co}` : (role || co || '');
+  let html = subject ? `<p class="summary">${esc(subject)}</p>` : '';
+  html += `<div class="verdict-head">
       <span class="swatch" style="background:${s.color}"></span>
       <span class="verdict-word">${s.word}</span>
       <span class="tier">tier ${esc(r.tier)}</span>
@@ -325,7 +355,28 @@ function render() {
   if (r.notes.length) {
     html += '<ul class="notes">' + r.notes.map((n) => `<li>${esc(n)}</li>`).join('') + '</ul>';
   }
+  html += '<button class="ghost" id="copy" type="button" style="margin-top:15px">Copy verdict</button>';
   out.innerHTML = html;
+
+  // Plain text, so the verdict can go straight into a tracker row or a note.
+  document.getElementById('copy').addEventListener('click', async (e) => {
+    const lines = [
+      subject || '(role not named)',
+      `verdict: ${r.verdict}    tier: ${r.tier}`,
+      '',
+      ...r.findings.flatMap((f) => [
+        `[${f.verdict}] ${f.rule}`,
+        `  evidence: "${f.evidence.trim()}"`,
+        `  why: ${f.why}`,
+      ]),
+      ...(r.notes.length ? ['', ...r.notes.map((n) => `note: ${n}`)] : []),
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join(String.fromCharCode(10)));
+      e.target.textContent = 'Copied';
+      setTimeout(() => { e.target.textContent = 'Copy verdict'; }, 1400);
+    } catch { e.target.textContent = 'Copy blocked by browser'; }
+  });
 }
 
 const chips = document.getElementById('chips');
@@ -344,7 +395,7 @@ DEMO.forEach(([label, text, opts]) => {
   chips.appendChild(b);
 });
 
-[jd, ev, evno, lca].forEach((el) => el.addEventListener('input', () => {
+[jd, ev, evno, lca, roleEl, coEl].forEach((el) => el.addEventListener('input', () => {
   /* The two E-Verify boxes are mutually exclusive. */
   if (el === ev && ev.checked) evno.checked = false;
   if (el === evno && evno.checked) ev.checked = false;

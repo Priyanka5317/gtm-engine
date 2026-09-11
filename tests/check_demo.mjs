@@ -141,6 +141,71 @@ const darkStage4 = await page.evaluate(() => getComputedStyle(document.querySele
 check(light !== darkSurface, 'theme toggle changes the chart surface', `${light} -> ${darkSurface}`);
 check(darkStage4 === '#184f95', 'dark ramp uses its own validated darkest step', darkStage4);
 
+/* ---- 5b. TEXT CONTRAST IN BOTH THEMES -------------------------------
+ * The original suite asserted that --surface-1 changed when the theme
+ * toggled, and passed while h1, the stat digits, the verdict word and every
+ * rule name rendered pure black on the dark surface at 1.08:1. Asserting a
+ * variable changed is not asserting the page is readable. So measure the
+ * real computed contrast of actual text against its real painted
+ * background, in both themes.
+ *
+ * Cause of that bug, worth keeping written down: the custom properties were
+ * scoped to .viz-root while body's own `color` referenced them from outside
+ * that scope. An unresolvable var() in `color` falls back to black, and
+ * everything that did not set its own colour inherited it.
+ */
+const CONTRAST_TARGETS = [
+  ['h1', 'h1'], ['stat digits', '.tile .v'], ['stat label', '.tile .k'],
+  ['h2', 'h2'], ['verdict word', '.verdict-word'], ['rule name', '.frule'],
+  ['note', '.note'], ['bar value', '.row .val'], ['table header', 'th'],
+  ['quoted evidence', '#out blockquote'], ['field label', '.fld'],
+];
+for (const theme of ['light', 'dark']) {
+  const measured = await page.evaluate(({ t, targets }) => {
+    document.documentElement.dataset.theme = t;
+    const lum = (c) => {
+      const p = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => {
+        v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2];
+    };
+    const bgOf = (el) => {
+      let n = el;
+      while (n) {
+        const bg = getComputedStyle(n).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') return bg;
+        n = n.parentElement;
+      }
+      return 'rgb(255,255,255)';
+    };
+    return targets.map(([label, sel]) => {
+      const el = document.querySelector(sel);
+      if (!el) return { label, ratio: null };
+      const a = lum(getComputedStyle(el).color), b = lum(bgOf(el));
+      const [hi, lo] = a > b ? [a, b] : [b, a];
+      return { label, ratio: +((hi + 0.05) / (lo + 0.05)).toFixed(2) };
+    });
+  }, { t: theme, targets: CONTRAST_TARGETS });
+
+  for (const m of measured) {
+    if (m.ratio === null) { check(false, `${theme}: ${m.label} present`, 'selector not found'); continue; }
+    // 4.5:1 is the WCAG AA body-text bar. Large display text could legally
+    // sit at 3:1, but everything here clears the stricter bar, so hold it
+    // there rather than carving out exceptions that hide a regression.
+    check(m.ratio >= 4.5, `${theme}: ${m.label} readable`, `${m.ratio}:1`);
+  }
+}
+await page.evaluate(() => { delete document.documentElement.dataset.theme; });
+
+/* ---- 5c. the role/company fields drive the verdict panel ------------- */
+await page.locator('#chips .chip').nth(0).click();
+await page.fill('#role', 'Data Analyst, GTM Sales Insights');
+await page.fill('#co', 'Lyft');
+await page.waitForTimeout(60);
+const subject = await page.locator('#out .summary').innerText().catch(() => '');
+check(/Data Analyst, GTM Sales Insights at Lyft/.test(subject), 'role and company label the verdict', subject);
+check(await page.locator('#out #copy').count() === 1, 'verdict is copyable');
+
 /* ---- 6. table view exists (the relief rule) -------------------------- */
 await page.locator('#tableBtn').click();
 await page.waitForTimeout(40);

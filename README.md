@@ -33,13 +33,25 @@ node tests/parity_check.mjs
 it - console errors, bar geometry, layout overflow measured as the deepest
 descendant rather than `scrollHeight` (a clipped container reports a passing
 `scrollHeight` while its content spills), the dark ramp resolving to its own
-validated step, and every example chip matching the engine:
+validated step, every example chip matching the engine, and **the real computed
+contrast of every text role against its real painted background, in both
+themes**:
 
 ```
 node tests/check_demo.mjs
 
-21/21 checks passed
+45/45 checks passed
 ```
+
+That last group exists because the earlier suite passed while the page was
+unreadable. It asserted that `--surface-1` changed when the theme toggled,
+which it did - but the heading, the stat digits, the verdict word and every
+rule name were rendering pure black on the dark surface at **1.08:1**. The
+cause was scoping: the custom properties were declared on `.viz-root` while
+`body`'s own `color` referenced them from outside that scope, and an
+unresolvable `var()` in `color` falls back to black, which everything then
+inherited. Asserting that a variable changed is not asserting that a page can
+be read, so now the contrast itself is measured. Worst role is 7.73:1.
 
 To run it locally, **serve the directory** rather than opening the file:
 
