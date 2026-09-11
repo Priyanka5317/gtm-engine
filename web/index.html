@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-palette="#86b6ef,#3987e5,#256abf,#0d366b">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTM Engine - qualification gate and pipeline funnel</title>
+<style>
+  /* Palette roles. Light values here; both dark scopes declared below so the
+     OS setting and the in-page toggle each win in the right order. Every
+     value is from the validated reference palette - the funnel ramp passed
+     the ordinal gate in both modes (one hue, monotone lightness, light end
+     clears 2:1 on its surface). */
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    /* ordinal ramp, light: steps 250 / 400 / 500 / 700 */
+    --stage-1: #86b6ef;
+    --stage-2: #3987e5;
+    --stage-3: #256abf;
+    --stage-4: #0d366b;
+    --nodata:  #c3c2b7;
+    /* status palette - fixed, never themed */
+    --good:     #0ca30c;
+    --warning:  #fab219;
+    --serious:  #ec835a;
+    --critical: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      /* ordinal ramp, dark: steps 250 / 400 / 500 / 600 - no darker than 600 */
+      --stage-1: #86b6ef;
+      --stage-2: #3987e5;
+      --stage-3: #256abf;
+      --stage-4: #184f95;
+      --nodata:  #383835;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --stage-1: #86b6ef;
+    --stage-2: #3987e5;
+    --stage-3: #256abf;
+    --stage-4: #184f95;
+    --nodata:  #383835;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  .viz-root { background: var(--page); min-height: 100vh; padding: 32px 24px 64px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  header.masthead { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .sub { color: var(--text-secondary); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 68ch; }
+  .masthead-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  button.ghost {
+    font: inherit; font-size: 13px; color: var(--text-secondary);
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 7px; padding: 6px 11px; cursor: pointer;
+  }
+  button.ghost:hover { color: var(--text-primary); }
+  button.ghost[aria-pressed="true"] { color: var(--text-primary); border-color: var(--baseline); }
+
+  section.card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 24px; margin-top: 20px;
+  }
+  h2 { font-size: 16.5px; font-weight: 640; margin: 0 0 4px; letter-spacing: -0.005em; }
+  .note { color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin: 0 0 18px; max-width: 76ch; }
+  .note.tight { margin-bottom: 0; }
+
+  /* ---- stat tiles: a headline number is not a chart */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; margin-top: 20px; }
+  .tile { background: var(--surface-1); padding: 15px 17px; }
+  .tile .v { font-size: 27px; font-weight: 640; line-height: 1.1; }
+  .tile .k { font-size: 12px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.01em; }
+
+  /* ---- gate */
+  .gate-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 820px) { .gate-grid { grid-template-columns: minmax(0, 1fr); } }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 11px; }
+  .chip {
+    font: inherit; font-size: 12.5px; color: var(--text-secondary);
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 11px; cursor: pointer;
+  }
+  .chip:hover { color: var(--text-primary); border-color: var(--baseline); }
+  textarea {
+    width: 100%; min-height: 132px; resize: vertical; font: inherit; font-size: 14px;
+    line-height: 1.6; color: var(--text-primary); background: var(--page);
+    border: 1px solid var(--border); border-radius: 9px; padding: 12px 13px;
+  }
+  textarea:focus { outline: 2px solid var(--stage-2); outline-offset: 1px; }
+  .toggles { display: flex; gap: 16px; margin-top: 11px; font-size: 13px; color: var(--text-secondary); flex-wrap: wrap; }
+  .toggles label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+  .verdict-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  /* The swatch carries identity; the words carry meaning. A status colour
+     never communicates alone - two of the four are sub-3:1 by design. */
+  .swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; box-shadow: 0 0 0 2px var(--surface-1); }
+  .verdict-word { font-size: 21px; font-weight: 660; letter-spacing: -0.01em; }
+  .tier { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .finding { border-top: 1px solid var(--gridline); padding: 13px 0 0; margin-top: 13px; }
+  .finding:first-of-type { border-top: 0; }
+  .frule { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .fverdict { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+  blockquote {
+    margin: 9px 0 0; padding: 9px 12px; border-left: 2px solid var(--baseline);
+    background: var(--page); border-radius: 0 6px 6px 0;
+    font-size: 13.5px; line-height: 1.55; color: var(--text-primary);
+  }
+  .why { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin: 8px 0 0; }
+  .notes { margin: 14px 0 0; padding: 0 0 0 18px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ---- funnel bars: horizontal, 4px rounded data-end, 2px surface gap */
+  .bars { margin-top: 4px; }
+  .row { display: grid; grid-template-columns: 168px minmax(0, 1fr) 96px; align-items: center; gap: 12px; padding: 2px 0; }
+  .row .lab { font-size: 13px; color: var(--text-secondary); text-align: right; }
+  .track { position: relative; height: 26px; }
+  .track::before {
+    content: ""; position: absolute; inset: 0 0 0 0; border-left: 1px solid var(--baseline);
+  }
+  .bar {
+    position: absolute; left: 0; top: 3px; bottom: 3px;
+    border-radius: 0 4px 4px 0; transition: width 140ms ease-out;
+  }
+  .row .val { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .row .val .pct { color: var(--text-muted); font-size: 11.5px; margin-left: 5px; }
+  .row:hover .lab, .row:hover .val { color: var(--text-primary); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--gridline); }
+  th { color: var(--text-muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
+
+  /* ---- adapters */
+  .adapters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .uncovered { margin: 16px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; }
+  .uncovered code { font-size: 12px; color: var(--text-primary); }
+
+  footer { margin-top: 26px; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+  a { color: var(--stage-3); }
+
+  /* Texture is the accessibility channel: off by default, on for
+     forced-colors and print, where hue cannot be relied on. */
+  @media (forced-colors: active), print {
+    .bar { background-image: repeating-linear-gradient(45deg, transparent 0 3px, currentColor 3px 4px); }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <h1>GTM Engine</h1>
+      <p class="sub">A go-to-market pipeline engine, pointed at a real one. The gate below is the same logic
+      <code>src/gate.py</code> runs, ported to the browser and held to it by
+      <code>tests/parity_check.mjs</code>, which fails if a single verdict differs.</p>
+    </div>
+    <div class="masthead-actions">
+      <button class="ghost" id="theme" type="button">Dark</button>
+    </div>
+  </header>
+
+  <div class="tiles">
+    <div class="tile"><div class="v">534</div><div class="k">opportunities</div></div>
+    <div class="tile"><div class="v">462</div><div class="k">companies</div></div>
+    <div class="tile"><div class="v">21</div><div class="k">ATS platforms seen</div></div>
+    <div class="tile"><div class="v">13</div><div class="k">adapters, 9 live-verified</div></div>
+    <div class="tile"><div class="v">14/14</div><div class="k">gate cases, both languages</div></div>
+  </div>
+
+  <!-- =============================================== the gate -->
+  <section class="card">
+    <h2>The qualification gate</h2>
+    <p class="note">Every GTM pipeline needs a stage that removes opportunities before anyone spends effort on them.
+    Here it is work authorisation. Two rules carry the whole thing: <strong>only a stated requirement is a wall</strong>,
+    because silence is not a rejection; and <strong>a wall and a downgrade are different outcomes</strong>, because a
+    citizenship requirement cannot be negotiated while a missing sponsorship policy can be priced. Paste a sentence
+    from a real posting and every verdict cites the phrase that produced it.</p>
+
+    <div class="gate-grid">
+      <div>
+        <div class="chips" id="chips"></div>
+        <label for="jd" style="position:absolute;left:-9999px">Job description text</label>
+        <textarea id="jd" spellcheck="false" placeholder="Paste job description text, or pick an example above."></textarea>
+        <div class="toggles">
+          <label><input type="checkbox" id="ev"> E-Verify confirmed</label>
+          <label><input type="checkbox" id="evno"> E-Verify checked, not enrolled</label>
+          <label><input type="checkbox" id="lca"> 137 LCAs on record</label>
+        </div>
+      </div>
+      <div id="out" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- =============================================== the funnel -->
+  <section class="card">
+    <h2>Where 534 opportunities ended up</h2>
+    <p class="note">Terminal state of every row in the real pipeline over six months. These are mutually exclusive
+    buckets rather than nested funnel stages, so the bars are a distribution and the percentages are of the whole.
+    The last bar is the honest one: rows whose status text mapped to nothing.</p>
+    <div class="bars" id="bars"></div>
+    <div style="margin-top:14px"><button class="ghost" id="tableBtn" type="button" aria-pressed="false">Table view</button></div>
+    <div id="tableWrap" hidden>
+      <table>
+        <thead><tr><th>Terminal state</th><th class="n">Rows</th><th class="n">Share</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note tight" style="margin-top:16px"><strong>What this cannot tell you.</strong> Submission is recorded
+    inconsistently, so <em>applied</em> is a floor and not a total, and interview outcomes are not in this table at all.
+    Conversion therefore cannot be computed from this source. Inventing a number here would be the exact failure the
+    rest of this repo argues against: fix the vocabulary first, then measure.</p>
+  </section>
+
+  <!-- =============================================== adapters -->
+  <section class="card">
+    <h2>Adapter coverage</h2>
+    <p class="note"><strong>13 implemented, 9 verified against live vendors.</strong> Those are two different claims, so
+    the suite prints both and names every gap. No mocks anywhere: the thing most likely to break is not the parsing, it
+    is a vendor quietly renaming a field, and a mock hides exactly that.</p>
+    <div class="adapters" id="adapters"></div>
+    <ul class="uncovered" id="uncovered"></ul>
+  </section>
+
+  <footer>
+    Python 3.11, no dependencies, no API keys, no accounts. Runs entirely in your browser; nothing is sent anywhere.
+    The sample pipeline in the repo is synthetic. The real table is not published, because it carries company names,
+    recruiter identities and private notes: the engine ships, the data does not.
+  </footer>
+
+</div>
+</div>
+
+<script type="module">
+import { evaluate, DEMO, Verdict } from './gate-engine.js';
+
+/* ---------------------------------------------------------------- the gate */
+const jd = document.getElementById('jd');
+const out = document.getElementById('out');
+const ev = document.getElementById('ev');
+const evno = document.getElementById('evno');
+const lca = document.getElementById('lca');
+
+const STATUS = {
+  [Verdict.BLOCK]:     { color: 'var(--critical)', word: 'BLOCK',     gloss: 'stated, contractual - no application can succeed' },
+  [Verdict.DOWNGRADE]: { color: 'var(--warning)',  word: 'DOWNGRADE', gloss: 'allowed, but priced down - deliberately not a skip' },
+  [Verdict.PASS]:      { color: 'var(--good)',     word: 'PASS',      gloss: 'nothing adverse stated' },
+};
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* The two E-Verify checkboxes are three states, not two: unchecked means
+   "not looked up", which is its own tier and must not collapse to false. */
+function everifyState() {
+  if (ev.checked) return true;
+  if (evno.checked) return false;
+  return null;
+}
+
+function render() {
+  const text = jd.value;
+  if (!text.trim()) {
+    out.innerHTML = '<p class="note tight" style="color:var(--text-muted)">Pick an example or paste text to see a verdict.</p>';
+    return;
+  }
+  const r = evaluate(text, { everifyConfirmed: everifyState(), lcaCount: lca.checked ? 137 : null });
+  const s = STATUS[r.verdict];
+
+  let html = `<div class="verdict-head">
+      <span class="swatch" style="background:${s.color}"></span>
+      <span class="verdict-word">${s.word}</span>
+      <span class="tier">tier ${esc(r.tier)}</span>
+    </div>
+    <p class="why" style="margin-top:6px">${esc(s.gloss)}</p>`;
+
+  for (const f of r.findings) {
+    html += `<div class="finding">
+      <div class="frule">
+        <span class="swatch" style="background:${STATUS[f.verdict].color}"></span>
+        <span>${esc(f.rule)}</span>
+        <span class="fverdict">${esc(f.verdict)}</span>
+      </div>
+      <blockquote>${esc(f.evidence.trim())}</blockquote>
+      <p class="why">${esc(f.why)}</p>
+    </div>`;
+  }
+  if (r.notes.length) {
+    html += '<ul class="notes">' + r.notes.map((n) => `<li>${esc(n)}</li>`).join('') + '</ul>';
+  }
+  out.innerHTML = html;
+}
+
+const chips = document.getElementById('chips');
+DEMO.forEach(([label, text, opts]) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'chip';
+  b.textContent = label;
+  b.addEventListener('click', () => {
+    jd.value = text;
+    ev.checked = opts.everifyConfirmed === true;
+    evno.checked = opts.everifyConfirmed === false;
+    lca.checked = false;
+    render();
+  });
+  chips.appendChild(b);
+});
+
+[jd, ev, evno, lca].forEach((el) => el.addEventListener('input', () => {
+  /* The two E-Verify boxes are mutually exclusive. */
+  if (el === ev && ev.checked) evno.checked = false;
+  if (el === evno && evno.checked) ev.checked = false;
+  render();
+}));
+
+/* ---------------------------------------------------------------- funnel */
+const TOTAL = 534;
+const STAGES = [
+  { label: 'evaluated',    n: 305, v: 'var(--stage-1)', hint: 'scored, no pack built' },
+  { label: 'screened out', n: 108, v: 'var(--stage-2)', hint: 'removed by a gate before any effort' },
+  { label: 'pack built',   n: 78,  v: 'var(--stage-3)', hint: 'resume, letter, sometimes a deck' },
+  { label: 'applied',      n: 22,  v: 'var(--stage-4)', hint: 'submission recorded - a floor, not a total' },
+  { label: 'status unmapped', n: TOTAL - (305 + 108 + 78 + 22), v: 'var(--nodata)', hint: '107 distinct status literals; these matched no stage' },
+];
+const MAX = Math.max(...STAGES.map((s) => s.n));
+
+const bars = document.getElementById('bars');
+const tbody = document.getElementById('tbody');
+for (const s of STAGES) {
+  const pct = (s.n / TOTAL) * 100;
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.title = `${s.label}: ${s.n} of ${TOTAL} rows (${pct.toFixed(1)}%) - ${s.hint}`;
+  row.innerHTML = `<div class="lab">${s.label}</div>
+    <div class="track"><div class="bar" style="width:${(s.n / MAX) * 100}%;background:${s.v}"></div></div>
+    <div class="val">${s.n}<span class="pct">${pct.toFixed(1)}%</span></div>`;
+  bars.appendChild(row);
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${s.label}</td><td class="n">${s.n}</td><td class="n">${pct.toFixed(1)}%</td>`;
+  tbody.appendChild(tr);
+}
+
+const tableBtn = document.getElementById('tableBtn');
+const tableWrap = document.getElementById('tableWrap');
+tableBtn.addEventListener('click', () => {
+  const open = tableWrap.hidden;
+  tableWrap.hidden = !open;
+  tableBtn.setAttribute('aria-pressed', String(open));
+});
+
+/* ---------------------------------------------------------------- adapters */
+const LIVE = ['ashby', 'dayforce', 'greenhouse', 'icims', 'lever', 'oracle', 'rippling', 'smartrecruiters', 'workday'];
+const GAPS = [
+  ['eightfold', 'needs a tenant plus pid pair; none live at time of writing'],
+  ['phenom', 'matcher is generic by design, so any pinned fixture would be one vendor'],
+  ['taleo', 'tenant TLS handshakes failed from this network on every host tried'],
+  ['workable', 'board endpoint verified live; no open req found to pin a posting URL to'],
+];
+const adapters = document.getElementById('adapters');
+for (const name of LIVE) {
+  const el = document.createElement('span');
+  el.className = 'pill';
+  el.innerHTML = `<span class="dot" style="background:var(--good)"></span>${name}<span class="fverdict">live</span>`;
+  adapters.appendChild(el);
+}
+for (const [name] of GAPS) {
+  const el = document.createElement('span');
+  el.className = 'pill';
+  el.innerHTML = `<span class="dot" style="background:var(--nodata)"></span>${name}<span class="fverdict">no fixture</span>`;
+  adapters.appendChild(el);
+}
+document.getElementById('uncovered').innerHTML = GAPS
+  .map(([n, why]) => `<li><code>${n}</code> - ${why}</li>`).join('');
+
+/* ---------------------------------------------------------------- theme */
+const btn = document.getElementById('theme');
+const root = document.documentElement;
+function dark() {
+  return root.dataset.theme === 'dark'
+    || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+}
+function syncBtn() { btn.textContent = dark() ? 'Light' : 'Dark'; }
+btn.addEventListener('click', () => { root.dataset.theme = dark() ? 'light' : 'dark'; syncBtn(); });
+syncBtn();
+
+jd.value = DEMO[0][1];
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "gtm-engine",
+  "private": true,
+  "type": "module",
+  "description": "Declares the browser gate and its parity test as ES modules. There are no dependencies and nothing to install; this file exists only so node runs web/gate-engine.js and tests/parity_check.mjs without a module-type warning.",
+  "scripts": {
+    "test": "node tests/parity_check.mjs"
+  }
+}

@@ -8,6 +8,51 @@ Python 3.11, **no dependencies, no API keys, no accounts**. Every number below c
 
 ---
 
+## Try it without installing anything
+
+**[Open the live demo](https://priyanka5317.github.io/gtm-engine/web/)**
+
+Paste a sentence from a real posting and watch the gate decide, with the phrase
+that produced the verdict quoted back at you. Runs entirely in your browser, no
+server and no key.
+
+**The demo is evidence, not decoration.** The gate rules exist twice - once in
+`src/gate.py`, once in `web/gate-engine.js` - and two implementations of the
+same logic drift silently. So `tests/parity_check.mjs` takes the case list from
+`tests/test_gate.py`, the same one the Python suite asserts against rather than
+a copy, runs every case through both, and fails on any difference in verdict,
+tier or the rules that fired:
+
+```
+node tests/parity_check.mjs
+
+14/14 cases identical in both implementations
+```
+
+`tests/check_demo.mjs` then renders the page in headless Chromium and *measures*
+it - console errors, bar geometry, layout overflow measured as the deepest
+descendant rather than `scrollHeight` (a clipped container reports a passing
+`scrollHeight` while its content spills), the dark ramp resolving to its own
+validated step, and every example chip matching the engine:
+
+```
+node tests/check_demo.mjs
+
+21/21 checks passed
+```
+
+To run it locally, **serve the directory** rather than opening the file:
+
+```bash
+python -m http.server -d web 8000    # then open http://localhost:8000
+```
+
+Opening `web/index.html` directly will not work. The page loads its engine as an
+ES module, and Chromium blocks a module import from a `file://` page as
+cross-origin.
+
+---
+
 ## Does it work?
 
 ### Adapters, tested against the live vendors
