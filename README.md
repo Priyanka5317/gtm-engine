@@ -60,14 +60,14 @@ cross-origin.
 ```
 python tests/test_live.py
 
-14 passed, 0 failed, 2 skipped (closed reqs)
-platforms with a live fixture : 9/13
-NOT covered by a live fixture : eightfold, phenom, taleo, workable
+18 passed, 0 failed, 3 skipped (closed reqs)
+platforms with a live fixture : 12/13
+NOT covered by a live fixture : phenom
 ```
 
 No mocks. The thing most likely to break is not the parsing, it is a vendor quietly renaming a field, and a mock hides exactly that.
 
-**13 adapters implemented, 9 verified live.** Those are different claims and the test prints both, along with why each unverified one is unverified.
+**13 adapters implemented, 12 verified live.** Those are different claims and the test prints both, along with why each unverified one is unverified.
 
 ### The gate
 

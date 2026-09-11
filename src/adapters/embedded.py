@@ -138,6 +138,14 @@ def dayforce(url: str) -> JobPosting:
 
 # ------------------------------------------------------------------- taleo
 
+# Taleo's own wording for an expired req, served with HTTP 200.
+TALEO_CLOSED = re.compile(
+    r"job description you are trying to view is\s*(?:</?[^>]+>\s*)*no longer available"
+    r"|requisition (?:is )?no longer available",
+    re.I | re.S,
+)
+
+
 @register("taleo", FAMILY, lambda u: "taleo.net" in u or "masscareers" in u.lower())
 def taleo(url: str) -> JobPosting:
     """Taleo hides the posting in a urlencoded `initialHistory` parameter.
@@ -145,8 +153,21 @@ def taleo(url: str) -> JobPosting:
     A plain fetch returns an EMPTY template, which is a false negative rather
     than a closed req. The REST API on these tenants is dead (searchjobs
     returns HTTP 500), so its 404s prove nothing about whether a job exists.
+
+    An expired req is a third case, and it is the one that used to be
+    misreported. Taleo serves it as HTTP 200 carrying a "no longer available"
+    string, so neither the status code nor the missing blob distinguishes
+    "gone" from "we failed to parse it" - only the body does. Assert on the
+    body, or every expired posting reads as a broken adapter.
     """
     html = http(url)
+
+    if TALEO_CLOSED.search(html):
+        raise PostingClosed(
+            "Taleo states the job description is no longer available. Served as "
+            "HTTP 200, so only the body distinguishes this from an extraction failure.",
+            status=200,
+        )
 
     item = _jsonld_posting(html)
     if item:

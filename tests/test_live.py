@@ -81,6 +81,22 @@ FIXTURES: list[tuple[str, str, str]] = [
     ("icims",
      "https://tuccareers-touro.icims.com/jobs/13268/data-analyst/job",
      "expected to be CLOSED, proves 410 is classified not crashed"),
+    ("eightfold",
+     "https://johndeere.eightfold.ai/careers/job/137482523381",
+     "path-form url: /careers/job/{pid}, no domain param, so it is derived"),
+    ("eightfold",
+     "https://qualcomm.eightfold.ai/careers/job/446721016271",
+     "second tenant, confirms the tenant is not hardcoded anywhere"),
+    ("workable",
+     "https://apply.workable.com/accora/j/4A8BA0A44E/apply",
+     "url has an /apply suffix; account slug and shortcode both come from the path"),
+    ("workable",
+     "https://apply.workable.com/credence/j/BAD39E80E0/apply",
+     "second account, and the widget api serves the body without a key"),
+    ("taleo",
+     "https://massanf.taleo.net/careersection/ex/jobdetail.ftl?job=1072298",
+     "expected to be CLOSED, and Taleo serves that as HTTP 200 - only the body "
+     "says so, which is why the adapter asserts on the body"),
 ]
 
 # Implemented against a documented endpoint but with no live fixture pinned
@@ -88,11 +104,20 @@ FIXTURES: list[tuple[str, str, str]] = [
 # because "13 platforms supported" and "13 platforms verified" are different
 # claims and only one of them is true.
 UNVERIFIED_NOTES = {
-    "workable": "board endpoint verified live; no open req found to pin a posting URL to",
-    "taleo": "tenant TLS handshakes failed from this network on every host tried",
-    "eightfold": "needs a tenant plus pid pair; none live at time of writing",
     "phenom": "matcher is generic by design, so any pinned fixture would be one vendor",
 }
+
+# Kept as a record, because "we could not verify it" and "we verified it and
+# here is what we learned" are different claims and the first one aged badly:
+#   workable   the earlier note said no open req could be found. Two were,
+#              from the same 21,000 row feed the pipeline already had.
+#   eightfold  the earlier note said a tenant plus pid pair was needed. The
+#              pair was never the problem - the adapter only matched
+#              ?pid={pid}, while every real share link is /careers/job/{pid}.
+#   taleo      the earlier note blamed TLS. massanf answers fine now, and the
+#              real finding is that an expired req arrives as HTTP 200 with a
+#              "no longer available" body, which the adapter used to report as
+#              its own failure.
 
 
 def run(only: set[str] | None = None) -> int:

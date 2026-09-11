@@ -258,8 +258,13 @@ def oracle(url: str) -> JobPosting:
 
 # --------------------------------------------------------------- eightfold
 
+# Two URL shapes in the wild, and the path form is the common one. A share
+# link reads /careers/job/{pid}; only a link copied mid-session carries
+# ?pid={pid}. Matching just the query form failed on every real posting seen
+# in a 21,000 row feed, which is how this was caught.
 EIGHTFOLD_TENANT = re.compile(
-    r"https?://(?P<tenant>[^.]+)\.eightfold\.ai/careers.*?[?&]pid=(?P<pid>\d+)"
+    r"https?://(?P<tenant>[^.]+)\.eightfold\.ai/careers"
+    r"(?:/job/(?P<pid_path>\d+)|.*?[?&]pid=(?P<pid_query>\d+))"
 )
 
 
@@ -276,8 +281,14 @@ def eightfold(url: str) -> JobPosting:
             f"could not parse an eightfold tenant and pid from {url}. "
             "Custom careers domains carry no pid; read their JSON-LD instead."
         )
-    tenant, pid = m.group("tenant"), m.group("pid")
+    tenant = m.group("tenant")
+    pid = m.group("pid_path") or m.group("pid_query")
+    # The API wants the employer's own domain. A share link has no domain
+    # param, and the tenant slug is the company, so fall back to it rather
+    # than sending an empty value the API answers inconsistently.
     domain = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query).get("domain", [""])[0]
+    if not domain:
+        domain = f"{tenant}.com"
 
     data = http_json(
         f"https://{tenant}.eightfold.ai/api/apply/v2/jobs/{pid}"

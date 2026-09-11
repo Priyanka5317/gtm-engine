@@ -202,7 +202,7 @@
     <div class="tile"><div class="v">534</div><div class="k">opportunities</div></div>
     <div class="tile"><div class="v">462</div><div class="k">companies</div></div>
     <div class="tile"><div class="v">21</div><div class="k">ATS platforms seen</div></div>
-    <div class="tile"><div class="v">13</div><div class="k">adapters, 9 live-verified</div></div>
+    <div class="tile"><div class="v">13</div><div class="k">adapters, 12 live-verified</div></div>
     <div class="tile"><div class="v">14/14</div><div class="k">gate cases, both languages</div></div>
   </div>
 
@@ -253,7 +253,7 @@
   <!-- =============================================== adapters -->
   <section class="card">
     <h2>Adapter coverage</h2>
-    <p class="note"><strong>13 implemented, 9 verified against live vendors.</strong> Those are two different claims, so
+    <p class="note"><strong>13 implemented, 12 verified against live vendors.</strong> Those are two different claims, so
     the suite prints both and names every gap. No mocks anywhere: the thing most likely to break is not the parsing, it
     is a vendor quietly renaming a field, and a mock hides exactly that.</p>
     <div class="adapters" id="adapters"></div>
@@ -388,12 +388,9 @@ tableBtn.addEventListener('click', () => {
 });
 
 /* ---------------------------------------------------------------- adapters */
-const LIVE = ['ashby', 'dayforce', 'greenhouse', 'icims', 'lever', 'oracle', 'rippling', 'smartrecruiters', 'workday'];
+const LIVE = ['ashby', 'dayforce', 'eightfold', 'greenhouse', 'icims', 'lever', 'oracle', 'rippling', 'smartrecruiters', 'taleo', 'workable', 'workday'];
 const GAPS = [
-  ['eightfold', 'needs a tenant plus pid pair; none live at time of writing'],
-  ['phenom', 'matcher is generic by design, so any pinned fixture would be one vendor'],
-  ['taleo', 'tenant TLS handshakes failed from this network on every host tried'],
-  ['workable', 'board endpoint verified live; no open req found to pin a posting URL to'],
+  ['phenom', 'the matcher is generic by design - it claims any host no other adapter recognises - so any pinned fixture would only ever prove one vendor'],
 ];
 const adapters = document.getElementById('adapters');
 for (const name of LIVE) {
